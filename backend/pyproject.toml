@@ -1,0 +1,10 @@
+[tool.mypy]
+exclude = [".venv"]
+
+[tool.ruff]
+
+extend-select = ["I"]
+
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

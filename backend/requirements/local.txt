@@ -1,0 +1,10 @@
+-r base.txt
+
+aiosqlite
+fastapi[standard]
+requests
+pytest
+pytest-asyncio
+# typing, linting, formatting etc
+mypy
+ruff

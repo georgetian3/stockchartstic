@@ -1,0 +1,7 @@
+asyncpg
+celery[redis]
+fastapi-users[redis,oauth]
+fastapi_users_db_sqlmodel
+python-dotenv
+nest_asyncio
+sqlmodel
