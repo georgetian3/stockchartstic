@@ -5,3 +5,5 @@ fastapi_users_db_sqlmodel
 python-dotenv
 nest_asyncio
 sqlmodel
+alpaca-py
+pydantic_settings

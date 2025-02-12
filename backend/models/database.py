@@ -11,7 +11,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-import config
+from settings import settings
 from models.models import *
 from models.user import OAuthAccount, User
 
@@ -21,12 +21,12 @@ nest_asyncio.apply()
 class Database:
     def __init__(self):
         self._url = URL.create(
-            drivername=config.DATABASE_DRIVERNAME,
-            username=config.DATABASE_USERNAME,
-            password=config.DATABASE_PASSWORD,
-            host=config.DATABASE_HOST,
-            port=config.DATABASE_PORT,
-            database=config.DATABASE_NAME,
+            drivername=settings.database_driver,
+            username=settings.database_username,
+            password=settings.database_password,
+            host=settings.database_host,
+            port=settings.database_port,
+            database=settings.database_name,
         )
         self._engine = create_async_engine(self._url)
         self._async_session_maker = sessionmaker(

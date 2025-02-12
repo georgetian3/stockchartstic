@@ -9,7 +9,7 @@ from sqlalchemy import and_, select
 from sqlalchemy.exc import IntegrityError
 
 from models.database import get_session
-from models.models import OHLCV, Instrument
+from models.models import Bar, Instrument
 from services.logging import get_logger
 
 
@@ -112,17 +112,17 @@ class YahooDataSource:
             except IntegrityError:
                 await session.rollback()
 
-            existing: list[OHLCV] = list((await session.exec(
-                select(OHLCV).where(and_(
-                    OHLCV.symbol==instrument.symbol,
-                    OHLCV.timestamp.in_(new_data.timestamp)
+            existing: list[Bar] = list((await session.exec(
+                select(Bar).where(and_(
+                    Bar.symbol==instrument.symbol,
+                    Bar.timestamp.in_(new_data.timestamp)
                 ))
             )).scalars())
 
             existing_map = {point.timestamp: point for point in existing}
 
             for i in range(len(new_data.timestamp)):
-                ohlcv = OHLCV(
+                ohlcv = Bar(
                     symbol=instrument.symbol,
                     timestamp=new_data.timestamp[i],
                     open=round_none(new_data.indicators.quote[0].open[i], TICK_SIZE),
@@ -133,7 +133,7 @@ class YahooDataSource:
                 )
 
                 if ohlcv.timestamp in existing_map:
-                    if ohlcv != existing_map[ohlcv.timestamp]:
+                    if ohlcv.model_dump(exclude={"id"}) != existing_map[ohlcv.timestamp].model_dump(exclude={"id"}):
                         print('Difference')
                         print('Old', existing_map[ohlcv.timestamp])
                         print('New', ohlcv)
@@ -143,7 +143,7 @@ class YahooDataSource:
 
             await session.commit()
 
-    async def query(self, symbol: str, interval = None, start = None, end = None, range = None) -> YahooData:
+    async def query(self, symbol: str, interval = None, start: datetime = None, end: datetime = None, range = None) -> YahooData:
 
         headers = {
             'Host': 'query2.finance.yahoo.com',
@@ -158,7 +158,7 @@ class YahooDataSource:
             'Sec-Fetch-Site': 'cross-site',
             'Priority': 'u=0, i',
         }
-
+        logger.info(f"Yahoo query: start {start.isoformat()} end {end.isoformat()} interval {interval} range {range}")
         url = f"https://query2.finance.yahoo.com/v8/finance/chart/{symbol}?"
         if interval:
             url += f"&interval={interval}"

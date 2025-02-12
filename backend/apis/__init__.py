@@ -5,8 +5,8 @@ from httpx_oauth.clients.facebook import FacebookOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
 from httpx_oauth.clients.google import GoogleOAuth2
 
-import config
-from apis.ohlcv import router as ohlcv_router
+from settings import settings
+from apis.bars import router as bars_router
 from models.user import UserCreate, UserRead, UserUpdate
 from services.user import auth_backend, fastapi_users
 
@@ -20,46 +20,47 @@ api.add_middleware(
     allow_headers=["*"],
 )
 
-api.include_router(ohlcv_router)
+api.include_router(bars_router)
 
-if None not in (config.OAUTH_GOOGLE_CLIENT_ID, config.OAUTH_GOOGLE_CLIENT_SECRET):
+
+if settings.oauth_google_client_id and settings.oauth_google_client_secret:
     api.include_router(
         fastapi_users.get_oauth_router(
             GoogleOAuth2(
-                config.OAUTH_GOOGLE_CLIENT_ID, config.OAUTH_GOOGLE_CLIENT_SECRET
+                settings.oauth_google_client_id, settings.oauth_google_client_secret
             ),
             auth_backend,
-            config.SECRET,
+            settings.secret,
         ),
         prefix="/auth/google",
         tags=["auth"],
     )
 
-if None not in (config.OAUTH_FACEBOOK_CLIENT_ID, config.OAUTH_FACEBOOK_CLIENT_SECRET):
+if settings.oauth_facebook_client_id and settings.oauth_facebook_client_secret:
     api.include_router(
         fastapi_users.get_oauth_router(
             FacebookOAuth2(
-                config.OAUTH_FACEBOOK_CLIENT_ID,
-                config.OAUTH_FACEBOOK_CLIENT_SECRET,
+                settings.oauth_facebook_client_id,
+                settings.oauth_facebook_client_secret,
                 ["https://www.googleapis.com/auth/userinfo.email"],
             ),
             auth_backend,
-            config.SECRET,
+            settings.SECRET,
         ),
         prefix="/auth/facebook",
         tags=["auth"],
     )
 
-if None not in (config.OAUTH_GITHUB_CLIENT_ID, config.OAUTH_GITHUB_CLIENT_SECRET):
+if settings.oauth_github_client_id and settings.oauth_github_client_secret:
     api.include_router(
         fastapi_users.get_oauth_router(
             GitHubOAuth2(
-                config.OAUTH_GITHUB_CLIENT_ID,
-                config.OAUTH_GITHUB_CLIENT_SECRET,
+                settings.oauth_github_client_id,
+                settings.oauth_github_client_secret,
                 ["user:email"],
             ),
             auth_backend,
-            config.SECRET,
+            settings.secret,
         ),
         prefix="/auth/github",
         tags=["auth"],
@@ -95,7 +96,7 @@ names.
 
 Should be called only after all routes have been added.
 
-# https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#using-the-path-operation-function-name-as-the-operationid
+# https://fastapi.tiangolo.com/advanced/path-operation-advanced-settings.ration/#using-the-path-operation-function-name-as-the-operationid
 """
 for route in api.routes:
     if isinstance(route, APIRoute):

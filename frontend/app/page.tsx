@@ -1,45 +1,93 @@
 "use client"
 
 import { useEffect, useState } from "react";
-import { Bar, CartesianGrid, ErrorBar, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts";
+
+import ReactECharts, { EChartsOption } from 'echarts-for-react';
 
 
-interface OHLCV {
-  timestamp: Date
-  open: number | null
-  high: number | null
-  low: number | null
-  close: number | null
-  volume: number | null
+interface BarList {
+  timestamp: Date[]
+  open: number[]
+  high: number[]
+  low: number[]
+  close: number[]
+  volume: number[]
+  trade_count: number[]
+  vwap: number[]
 }
 
+const emptyBarList: BarList = {
+  timestamp: [],
+  open: [],
+  high: [],
+  low: [],
+  close: [],
+  volume: [],
+  trade_count: [],
+  vwap: [],
+}
+
+function min(arr: number[]) {
+  let min = Number.POSITIVE_INFINITY
+  for (const elem of arr) {
+    if (elem < min) {
+      min = elem
+    }
+  }
+  return min
+}
+
+function max(arr: number[]) {
+  let max = Number.NEGATIVE_INFINITY
+  for (const elem of arr) {
+    if (elem > max) {
+      max = elem
+    }
+  }
+  return max
+}
 
 export default function Home() {
 
 
-  const [data, setData] = useState<OHLCV[]>([])
+  const [data, setData] = useState<BarList>(emptyBarList)
 
   useEffect(() => {
-    fetch('http://localhost:8000/aapl').then(
+    fetch('http://localhost:8000/bars?symbol=AAPL&start=2025-01-30T12:00:00&end=2025-01-30T21:00:00').then(
       (value) => {
         value.json().then(
-          (value) => {
-            setData(value)
+          (json) => {
+            console.log('json', json)
+            json.timestamp = json.timestamp.map((t: string) => new Date(t))
+            setData(json)
+            // console.log(data.timestamp)
+            
           }
         )
       }
     )
   }, [])
 
-  console.log(data)
+  console.log('data', data)
 
-  return <LineChart width={1200} height={800} data={data}>
-    <XAxis dataKey="timestamp" />
-    <Bar barSize={30} xAxisId={0}  dataKey="open" fill="#035aa6" />
-    {/* <Bar barSize={35} xAxisId={1} dataKey="close" fill="white">
-      <ErrorBar  dataKey="high" width={4} strokeWidth={2} stroke="#66c208" />
-      <ErrorBar dataKey="low" width={4} strokeWidth={2} stroke="#ff0044" />
-    </Bar> */}
-  </LineChart>
+  const option: EChartsOption = {
+    xAxis: {
+      // type: 'time',
+      data: data.timestamp
+    },
+    yAxis: {
+      min: Math.floor(min(data.low)),
+      max: Math.ceil(max(data.high))
+    },
+    series: [
+      {
+        type: 'candlestick',
+        data: data.open.map((_, i) => [data.close[i], data.open[i], data.low[i], data.high[i]]),
+      }
+    ]
+  };
+
+
+  return <ReactECharts opts={{renderer: 'svg'}} option={option} style={{height: '1000px'}}/>;
     
 }

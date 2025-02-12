@@ -3,44 +3,46 @@ from datetime import datetime
 
 from pydantic import BaseModel, model_validator
 from sqlmodel import Column, DateTime, Field, SQLModel
-
+from sqlmodel import UniqueConstraint
 
 class IntId(SQLModel):
     id: int | None = Field(primary_key=True, default=None)
 
 
 class Instrument(SQLModel, table=True):
-    symbol: str = Field(primary_key=True, max_length=5)
-    currency: str
-    exchange_name: str
-    full_exchange_name: str
-    instrument_type: str
-    first_trade_date: datetime = Field(sa_column=Column(DateTime(timezone=True)))
-    long_name: str
-    short_name: str
+    symbol: str = Field(primary_key=True)
+    exchange: str = Field(foreign_key="exchange.name")
 
-class OHLCVRead(SQLModel):
-    timestamp: datetime = Field(sa_column=Column(DateTime(timezone=True), unique=True))
-    open: float | None
-    high: float | None
-    low: float | None
-    close: float | None
-    volume: int | None
-
-class OHLCV(OHLCVRead, IntId, table=True):
-    symbol: str = Field(foreign_key="instrument.symbol")
+class Exchange(SQLModel, table=True):
+    name: str = Field(primary_key=True)
 
 
-class OHLCVList(BaseModel):
+class BarsRead(SQLModel):
+    timestamp: datetime = Field(sa_column=Column(DateTime(timezone=True), primary_key=True))
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: int
+    trade_count: int | None = None
+    vwap: float | None = None
+
+class Bar(BarsRead, table=True):
+    instrument: str = Field(foreign_key="instrument.symbol", primary_key=True)
+
+
+class BarList(BaseModel):
     timestamp: list[datetime] = []
     open: list[float | None] = []
     high: list[float | None] = []
     low: list[float | None] = []
     close: list[float | None] = []
-    volume: list[float | None] = []
+    volume: list[int | None] = []
+    trade_count: list[int | None] = []
+    vwap: list[float | None] = []
 
     @model_validator(mode="after")
-    def check_lists_same_length(cls, values: "OHLCVList"):
+    def check_lists_same_length(cls, values: "BarList"):
         lists = [values.timestamp, values.open, values.high, values.low, values.close, values.volume]
         lengths = {len(list) for list in lists}
         if len(lengths) > 1:
