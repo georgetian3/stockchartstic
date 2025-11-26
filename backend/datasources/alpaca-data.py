@@ -16,7 +16,6 @@
 # ))
 # print(bars)
 
-import json
 import requests
 
 url = "https://paper-api.alpaca.markets/v2/assets?status=active&asset_class=us_equity&attributes="
@@ -24,14 +23,13 @@ url = "https://paper-api.alpaca.markets/v2/assets?status=active&asset_class=us_e
 headers = {
     "accept": "application/json",
     "APCA-API-KEY-ID": "PKAA6O7FXLMP6UXG1AJA",
-    "APCA-API-SECRET-KEY": "Drf4Tnf5bQla5qQxM0rb8BjFtzXqAgvqrDZQuV6m"
+    "APCA-API-SECRET-KEY": "Drf4Tnf5bQla5qQxM0rb8BjFtzXqAgvqrDZQuV6m",
 }
 
 response = requests.get(url, headers=headers)
 
-with open('test.json', 'w', encoding='utf-8') as f:
+with open("test.json", "w", encoding="utf-8") as f:
     f.write(response.text)
-    
 
 
 # # import requests
@@ -47,7 +45,6 @@ with open('test.json', 'w', encoding='utf-8') as f:
 # # response = requests.get(url, headers=headers)
 
 # # print(response.text)
-
 
 
 # # from datetime import datetime
@@ -67,7 +64,6 @@ with open('test.json', 'w', encoding='utf-8') as f:
 # # class AlpacaStockHistoricalBars(BaseModel):
 # #     bars: dict[str, list[AlpacaStockHistoricalBarsOHLCV]]
 # #     next_page_token: str | None
-
 
 
 # # def query_alpaca(symbol: str, timeframe: str, start: datetime, end: datetime, limit)

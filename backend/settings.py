@@ -1,7 +1,10 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+    )
 
     database_host: str | None = None
     database_port: int | None = None
@@ -9,7 +12,6 @@ class Settings(BaseSettings):
     database_username: str | None = None
     database_password: str | None = None
     database_driver: str | None = None
-
 
     admin_id: str | None = None
 
@@ -32,4 +34,5 @@ class Settings(BaseSettings):
 
     secret: str
 
-settings = Settings()
+
+SETTINGS = Settings()

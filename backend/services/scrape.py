@@ -1,50 +1,67 @@
+import time
 from datetime import UTC, datetime, timedelta
+
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest
 from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
-
-import time
-
-from services.logging import get_logger
-from models.database import get_session
-from models.models import Exchange, Bar, Instrument
-from settings import settings
 from alpaca.trading.client import TradingClient
+from alpaca.trading.enums import AssetClass, AssetStatus
 from alpaca.trading.requests import GetAssetsRequest
-from alpaca.trading.enums import AssetStatus, AssetClass
-from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
+
+from models.database import get_session
+from models.models import Bar, Exchange, Instrument
+from services.logging import get_logger
+from settings import settings
 
 logger = get_logger(__name__)
 
-async def save_exchanges_and_instruments():
 
+async def save_exchanges_and_instruments():
     trading_client = TradingClient(settings.alpaca_id, settings.alpaca_secret)
     logger.debug("Start asset query")
-    assets = trading_client.get_all_assets(GetAssetsRequest(status=AssetStatus.ACTIVE, asset_class=AssetClass.US_EQUITY))
+    assets = trading_client.get_all_assets(
+        GetAssetsRequest(status=AssetStatus.ACTIVE, asset_class=AssetClass.US_EQUITY)
+    )
     logger.debug("Finish asset query")
     exchanges: list[Exchange] = []
     instruments: list[Instrument] = []
     for asset in assets:
         exchanges.append(Exchange(name=asset.exchange.upper()))
-        instruments.append(Instrument(symbol=asset.symbol.upper(), exchange=asset.exchange.upper()))
+        instruments.append(
+            Instrument(symbol=asset.symbol.upper(), exchange=asset.exchange.upper())
+        )
     logger.debug("Start Insert")
     async with get_session() as session:
         logger.debug("Insert exchanges")
-        await session.exec(insert(Exchange).values([exchange.model_dump() for exchange in exchanges]).on_conflict_do_nothing())
+        await session.exec(
+            insert(Exchange)
+            .values([exchange.model_dump() for exchange in exchanges])
+            .on_conflict_do_nothing()
+        )
         logger.debug("Insert instruments")
-        await session.exec(insert(Instrument).values([instrument.model_dump() for instrument in instruments]).on_conflict_do_nothing())
+        await session.exec(
+            insert(Instrument)
+            .values([instrument.model_dump() for instrument in instruments])
+            .on_conflict_do_nothing()
+        )
         await session.commit()
     logger.debug("Finish insert")
 
-def query_historial_bars(symbol, start, end, timeframe=TimeFrame(1, TimeFrameUnit.Minute)):
+
+def query_historial_bars(
+    symbol, start, end, timeframe=TimeFrame(1, TimeFrameUnit.Minute)
+):
     client = StockHistoricalDataClient(settings.alpaca_id, settings.alpaca_secret)
-    return client.get_stock_bars(StockBarsRequest(
-        symbol_or_symbols=symbol,
-        start=start,
-        end=end,
-        timeframe=timeframe,
-    ))
+    return client.get_stock_bars(
+        StockBarsRequest(
+            symbol_or_symbols=symbol,
+            start=start,
+            end=end,
+            timeframe=timeframe,
+        )
+    )
+
 
 async def get_historical_bars(symbol: str):
     symbol = symbol.upper()
@@ -53,7 +70,6 @@ async def get_historical_bars(symbol: str):
     if instrument is None:
         logger.error(f"Symbol does not exist: {symbol}")
         return
-
 
     start_date = datetime(2025, 1, 1, tzinfo=UTC)
     stop = False
@@ -72,21 +88,22 @@ async def get_historical_bars(symbol: str):
         bars = query_historial_bars(symbol, start_date, end_date)
         query_end = time.time()
         start_date = next_start_date
-        logger.debug(f"Finish bars query: len {len(bars[symbol])}, took {round(query_end - query_start, 3)}s")
-
+        logger.debug(
+            f"Finish bars query: len {len(bars[symbol])}, took {round(query_end - query_start, 3)}s"
+        )
 
         BATCH_SIZE = 32767
         BATCH_SIZE = int(BATCH_SIZE / len(Bar.model_fields))
-
 
         logger.debug("Start bars insert")
 
         async with get_session() as session:
             for i in range(0, len(bars[symbol]), BATCH_SIZE):
-                batch = [Bar.model_validate(bar, update={"instrument": symbol}).model_dump() for bar in bars[symbol][i : i + BATCH_SIZE]]
-                await session.exec(
-                    insert(Bar).values(batch).on_conflict_do_nothing()
-                )
+                batch = [
+                    Bar.model_validate(bar, update={"instrument": symbol}).model_dump()
+                    for bar in bars[symbol][i : i + BATCH_SIZE]
+                ]
+                await session.exec(insert(Bar).values(batch).on_conflict_do_nothing())
             await session.commit()
         logger.debug("Finish bars insert")
 
@@ -106,7 +123,6 @@ async def get_historical_bars(symbol: str):
 # # print(response.text)
 
 
-
 # # from datetime import datetime
 # # from pydantic import BaseModel, Field
 # # import requests
@@ -124,7 +140,6 @@ async def get_historical_bars(symbol: str):
 # # class AlpacaStockHistoricalBars(BaseModel):
 # #     bars: dict[str, list[AlpacaStockHistoricalBarsOHLCV]]
 # #     next_page_token: str | None
-
 
 
 # # def query_alpaca(symbol: str, timeframe: str, start: datetime, end: datetime, limit)

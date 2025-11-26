@@ -14,11 +14,11 @@ from fastapi_users.exceptions import UserAlreadyExists
 from fastapi_users_db_sqlmodel import SQLModelUserDatabaseAsync
 from sqlalchemy import select
 
-from settings import settings
 from models.database import get_async_session, get_session, get_user_db
 from models.user import User, UserCreate
 from services import logging
 from services.utils import CrudResult
+from settings import settings
 
 logger = logging.get_logger(__name__)
 
@@ -52,9 +52,11 @@ async def get_user_by_id(user_id: UUID) -> User | None:
 
 async def get_user_by_email(email: str) -> User | None:
     async with get_session() as session:
-        return (await session.exec(select(User).where(User.email == email))).scalars().first()
-
-
+        return (
+            (await session.exec(select(User).where(User.email == email)))
+            .scalars()
+            .first()
+        )
 
 
 class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
@@ -85,7 +87,8 @@ bearer_transport = BearerTransport(tokenUrl="auth/login")
 def get_redis_strategy() -> RedisStrategy:
     return RedisStrategy(
         redis.asyncio.from_url(
-            f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}", decode_responses=True
+            f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
+            decode_responses=True,
         ),
         lifetime_seconds=3600,
     )
@@ -102,7 +105,6 @@ fastapi_users = FastAPIUsers[User, uuid.UUID](get_user_manager, [auth_backend])
 current_active_user = fastapi_users.current_user(active=True)
 current_active_verified_user = fastapi_users.current_user(active=True, verified=True)
 current_superuser = fastapi_users.current_user(superuser=True)
-
 
 
 get_async_session_context = contextlib.asynccontextmanager(get_async_session)

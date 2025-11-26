@@ -11,9 +11,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from settings import settings
 from models.models import *
 from models.user import OAuthAccount, User
+from settings import settings
 
 nest_asyncio.apply()
 

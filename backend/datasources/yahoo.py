@@ -1,5 +1,3 @@
-
-
 from datetime import datetime
 
 import requests
@@ -19,8 +17,10 @@ class BaseData(BaseModel):
         populate_by_name=True,
         from_attributes=True,
     )
-    
+
+
 logger = get_logger(__name__)
+
 
 class YahooTradingPeriod(BaseData):
     timezone: str
@@ -28,10 +28,12 @@ class YahooTradingPeriod(BaseData):
     end: datetime
     gmtoffset: int
 
+
 class YahooCurrentTradingPeriod(BaseData):
     pre: YahooTradingPeriod
     regular: YahooTradingPeriod
     post: YahooTradingPeriod
+
 
 class YahooMeta(BaseData):
     currency: str
@@ -63,6 +65,7 @@ class YahooMeta(BaseData):
     range: str
     valid_ranges: list[str]
 
+
 class YahooQuote(BaseData):
     high: list[float | None]
     open: list[float | None]
@@ -74,14 +77,17 @@ class YahooQuote(BaseData):
 class YahooIndicators(BaseData):
     quote: list[YahooQuote]
 
+
 class YahooResult(BaseData):
     meta: YahooMeta
     timestamp: list[datetime]
     indicators: YahooIndicators
 
+
 class YahooChart(BaseData):
     result: list[YahooResult]
     error: str | None
+
 
 class YahooData(BaseData):
     chart: YahooChart
@@ -92,9 +98,8 @@ def round_none(x: float | None, digits: int) -> float | None:
         return x
     return round(x, digits)
 
+
 class YahooDataSource:
-
-
     async def insert(self, data: YahooData) -> None:
         new_data = data.chart.result[0]
 
@@ -103,21 +108,25 @@ class YahooDataSource:
 
         TICK_SIZE = 4
 
-
         async with get_session() as session:
-
             try:
                 session.add(instrument)
                 await session.commit()
             except IntegrityError:
                 await session.rollback()
 
-            existing: list[Bar] = list((await session.exec(
-                select(Bar).where(and_(
-                    Bar.symbol==instrument.symbol,
-                    Bar.timestamp.in_(new_data.timestamp)
-                ))
-            )).scalars())
+            existing: list[Bar] = list(
+                (
+                    await session.exec(
+                        select(Bar).where(
+                            and_(
+                                Bar.symbol == instrument.symbol,
+                                Bar.timestamp.in_(new_data.timestamp),
+                            )
+                        )
+                    )
+                ).scalars()
+            )
 
             existing_map = {point.timestamp: point for point in existing}
 
@@ -133,32 +142,42 @@ class YahooDataSource:
                 )
 
                 if ohlcv.timestamp in existing_map:
-                    if ohlcv.model_dump(exclude={"id"}) != existing_map[ohlcv.timestamp].model_dump(exclude={"id"}):
-                        print('Difference')
-                        print('Old', existing_map[ohlcv.timestamp])
-                        print('New', ohlcv)
+                    if ohlcv.model_dump(exclude={"id"}) != existing_map[
+                        ohlcv.timestamp
+                    ].model_dump(exclude={"id"}):
+                        print("Difference")
+                        print("Old", existing_map[ohlcv.timestamp])
+                        print("New", ohlcv)
                     continue
 
                 session.add(ohlcv)
 
             await session.commit()
 
-    async def query(self, symbol: str, interval = None, start: datetime = None, end: datetime = None, range = None) -> YahooData:
-
+    async def query(
+        self,
+        symbol: str,
+        interval=None,
+        start: datetime = None,
+        end: datetime = None,
+        range=None,
+    ) -> YahooData:
         headers = {
-            'Host': 'query2.finance.yahoo.com',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:134.0) Gecko/20100101 Firefox/134.0',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate, br, zstd',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'cross-site',
-            'Priority': 'u=0, i',
+            "Host": "query2.finance.yahoo.com",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:134.0) Gecko/20100101 Firefox/134.0",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Accept-Encoding": "gzip, deflate, br, zstd",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "cross-site",
+            "Priority": "u=0, i",
         }
-        logger.info(f"Yahoo query: start {start.isoformat()} end {end.isoformat()} interval {interval} range {range}")
+        logger.info(
+            f"Yahoo query: start {start.isoformat()} end {end.isoformat()} interval {interval} range {range}"
+        )
         url = f"https://query2.finance.yahoo.com/v8/finance/chart/{symbol}?"
         if interval:
             url += f"&interval={interval}"
@@ -173,8 +192,9 @@ class YahooDataSource:
         # async with self._session.get(url) as resp:
         #     body = await resp.read()
         if resp.status_code != 200:
-            logger.warning(f"Yahoo query failed {resp.status_code}: {resp.content.decode()}")
+            logger.warning(
+                f"Yahoo query failed {resp.status_code}: {resp.content.decode()}"
+            )
         data = YahooData.model_validate_json(resp.content)
         await self.insert(data)
         return data
-   

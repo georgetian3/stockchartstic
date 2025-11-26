@@ -1,10 +1,40 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "alpaca-py>=0.40.1",
+    "asyncpg>=0.30.0",
+    "celery[redis]>=5.5.3",
+    "fastapi-users-db-sqlmodel>=0.3.0",
+    "fastapi-users[oauth,redis]>=14.0.1",
+    "nest-asyncio>=1.6.0",
+    "pydantic-settings>=2.9.1",
+    "python-dotenv>=1.1.0",
+    "sqlmodel>=0.0.24",
+    "tradingview-scraper>=0.4.8",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.16.0",
+    "ruff>=0.11.13",
+]
+prod = [
+    "uvicorn>=0.34.3",
+]
+
+
+
 [tool.mypy]
 exclude = [".venv"]
 
 [tool.ruff]
-
 extend-select = ["I"]
 
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+

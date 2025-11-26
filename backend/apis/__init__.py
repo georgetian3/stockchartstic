@@ -1,14 +1,14 @@
 from fastapi import FastAPI
-from fastapi.routing import APIRoute
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.routing import APIRoute
 from httpx_oauth.clients.facebook import FacebookOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
 from httpx_oauth.clients.google import GoogleOAuth2
 
-from settings import settings
 from apis.bars import router as bars_router
 from models.user import UserCreate, UserRead, UserUpdate
 from services.user import auth_backend, fastapi_users
+from settings import settings
 
 api = FastAPI()
 

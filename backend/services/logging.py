@@ -9,7 +9,7 @@ from settings import settings
 class UtcFormatter(logging.Formatter):
     def formatTime(self, record, datefmt=None):
         dt = datetime.datetime.fromtimestamp(record.created).astimezone(
-            pytz.timezone('Australia/Melbourne')
+            pytz.timezone("Australia/Melbourne")
         )
         if datefmt:
             return dt.strftime(datefmt)

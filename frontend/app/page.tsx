@@ -53,7 +53,7 @@ export default function Home() {
   const [data, setData] = useState<BarList>(emptyBarList)
 
   useEffect(() => {
-    fetch('http://localhost:8000/bars?symbol=AAPL&start=2025-01-30T12:00:00&end=2025-01-30T21:00:00').then(
+    fetch('http://localhost:8000/bars?symbol=AAPL&start=2024-01-30T12:00:00&end=2025-01-30T21:00:00').then(
       (value) => {
         value.json().then(
           (json) => {
